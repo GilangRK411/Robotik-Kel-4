@@ -17,3 +17,13 @@ export type DashboardData = {
   logs: ActivityLog[];
 };
 
+export type WorkStatus = "work" | "not_work";
+
+export type WorkEntry = {
+  timestamp: string; // ISO string
+  status: WorkStatus;
+};
+
+export type WorkSeriesResponse = {
+  entries: WorkEntry[];
+};
