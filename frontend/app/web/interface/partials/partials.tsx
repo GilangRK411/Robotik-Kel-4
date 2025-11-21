@@ -39,7 +39,6 @@ export async function fetchWorkPerformance(): Promise<WorkEntry[]> {
     const json = (await res.json()) as WorkSeriesResponse;
     return json.entries;
   } catch (err) {
-    // Graceful fallback: generate a tiny local series so UI still renders
     const now = new Date();
     const entries: WorkEntry[] = [];
     for (let i = 60; i >= 0; i--) {

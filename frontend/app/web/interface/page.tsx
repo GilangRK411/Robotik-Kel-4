@@ -55,22 +55,22 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-10">
       <section>
-        <p className="text-xs uppercase tracking-wide text-slate-500">Rute aktif</p>
+        <p className="text-xs uppercase tracking-wide text-slate-500">Modul aktif</p>
         <h1 className="text-3xl font-semibold text-slate-900">{routes[0].name}</h1>
-        <p className="text-sm text-slate-500">Deteksi work performance (work vs tidak work) dari backend.</p>
+        <p className="text-sm text-slate-500">Deteksi aktivitas kerja manusia (kerja vs tidak kerja) dari backend.</p>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <StatsCard title="Rasio Work" value={`${ratio}%`} helper="24 jam terakhir" trend={ratio >= 66 ? "up" : ratio >= 33 ? "flat" : "down"} />
-        <StatsCard title="Durasi Work" value={fmtDuration(workMs)} helper="Estimasi berdasarkan log" />
-        <StatsCard title="Durasi Tidak Work" value={fmtDuration(notWorkMs)} helper="Estimasi berdasarkan log" />
+        <StatsCard title="Rasio Kerja" value={`${ratio}%`} helper="24 jam terakhir" trend={ratio >= 66 ? "up" : ratio >= 33 ? "flat" : "down"} />
+        <StatsCard title="Durasi Kerja" value={fmtDuration(workMs)} helper="Estimasi berdasarkan log" />
+        <StatsCard title="Durasi Tidak Kerja" value={fmtDuration(notWorkMs)} helper="Estimasi berdasarkan log" />
       </section>
 
       <section className="rounded-2xl border border-slate-100 bg-white/70 p-4">
         <header className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Grafik Work Performance</h2>
-            <p className="text-xs text-slate-500">Rasio work per jam (24 jam terakhir)</p>
+            <h2 className="text-lg font-semibold text-slate-900">Grafik Performa Kerja</h2>
+            <p className="text-xs text-slate-500">Rasio kerja per jam (24 jam terakhir)</p>
           </div>
         </header>
         <div className="mt-4">
@@ -81,14 +81,14 @@ export default async function DashboardPage() {
       <section className="rounded-2xl border border-slate-100 bg-white/70 p-4">
         <header>
           <h2 className="text-lg font-semibold text-slate-900">Riwayat Status</h2>
-          <p className="text-xs text-slate-500">Data disimpan dengan timestamp (work / tidak work)</p>
+          <p className="text-xs text-slate-500">Data disimpan dengan timestamp (kerja / tidak kerja)</p>
         </header>
         <ul className="mt-4 space-y-2">
           {entries.slice(-10).reverse().map((e) => (
             <li key={e.timestamp} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-2">
               <span className="text-sm text-slate-800">{new Date(e.timestamp).toLocaleString("id-ID")}</span>
               <span className={`text-xs font-medium ${e.status === "work" ? "text-green-600" : "text-red-600"}`}>
-                {e.status === "work" ? "work" : "tidak work"}
+                {e.status === "work" ? "kerja" : "tidak kerja"}
               </span>
             </li>
           ))}
