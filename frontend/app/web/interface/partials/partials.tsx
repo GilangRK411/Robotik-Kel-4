@@ -31,14 +31,17 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 export async function fetchWorkPerformance(): Promise<WorkEntry[]> {
   // If NEXT_PUBLIC_BACKEND_URL is defined, use it; else call local API route
   const base = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "");
-  const url = base ? `${base}/api/work-performance` : "/api/work-performance";
-
+  const url = base ? `${base}/api/productivity` : "/api/productivity";
+  // console.log("url: ", url);
   try {
     const res = await fetch(url, { cache: "no-store" });
+    // console.log(`response from ${url}:`, res.body);
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
     const json = (await res.json()) as WorkSeriesResponse;
+    // console.log("Fetched work performance data:", json);
     return json.entries;
   } catch (err) {
+    // console.error("Error fetching work performance data:", err);
     const now = new Date();
     const entries: WorkEntry[] = [];
     for (let i = 60; i >= 0; i--) {

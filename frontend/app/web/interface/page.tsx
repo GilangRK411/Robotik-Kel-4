@@ -13,7 +13,7 @@ function groupByHour(entries: WorkEntry[]) {
     ).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:00`;
     const bucket = map.get(key) ?? { ts: new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()).getTime(), work: 0, total: 0 };
     bucket.total += 1;
-    if (e.status === "work") bucket.work += 1;
+    if (e.label === "work") bucket.work += 1;
     map.set(key, bucket);
   }
   const arr = Array.from(map.entries())
@@ -31,7 +31,7 @@ function computeDurations(entries: WorkEntry[]) {
     const cur = sorted[i];
     const next = sorted[i + 1];
     const dt = +new Date(next.timestamp) - +new Date(cur.timestamp);
-    if (cur.status === "work") workMs += dt;
+    if (cur.label === "work") workMs += dt;
     else notWorkMs += dt;
   }
   const totalMs = workMs + notWorkMs || 1;
@@ -49,6 +49,7 @@ function fmtDuration(ms: number) {
 
 export default async function DashboardPage() {
   const entries = await fetchWorkPerformance();
+  // console.log("Fetched work performance entries:", entries);
   const buckets = groupByHour(entries);
   const { workMs, notWorkMs, ratio } = computeDurations(entries);
 
@@ -87,8 +88,8 @@ export default async function DashboardPage() {
           {entries.slice(-10).reverse().map((e) => (
             <li key={e.timestamp} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-2">
               <span className="text-sm text-slate-800">{new Date(e.timestamp).toLocaleString("id-ID")}</span>
-              <span className={`text-xs font-medium ${e.status === "work" ? "text-green-600" : "text-red-600"}`}>
-                {e.status === "work" ? "kerja" : "tidak kerja"}
+              <span className={`text-xs font-medium ${e.label === "work" ? "text-green-600" : "text-red-600"}`}>
+                {e.label === "work" ? "kerja" : "tidak kerja"}
               </span>
             </li>
           ))}

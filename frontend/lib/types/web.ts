@@ -21,9 +21,19 @@ export type WorkStatus = "work" | "not_work";
 
 export type WorkEntry = {
   timestamp: string; // ISO string
-  status: WorkStatus;
+  label: WorkStatus;
+  probability: number;
 };
 
 export type WorkSeriesResponse = {
   entries: WorkEntry[];
+};
+
+export type EmotionStatus  = "happy" | "angry" | "neutral" | "sad" | "surprised" | "fear" | "disgust";
+
+export type EmotionEntry = {
+  timestamp: string; // ISO string
+  label: EmotionStatus;
+  confidence: number;
+  class : number
 };
