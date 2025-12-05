@@ -48,10 +48,12 @@ function fmtDuration(ms: number) {
 }
 
 export default async function DashboardPage() {
-  const entries = await fetchWorkPerformance();
-  // console.log("Fetched work performance entries:", entries);
-  const buckets = groupByHour(entries);
-  const { workMs, notWorkMs, ratio } = computeDurations(entries);
+  const { entries, error } = await fetchWorkPerformance(200);
+  const hasEntries = entries.length > 0;
+  const recentEntries = entries.slice(-10).reverse();
+  const buckets = hasEntries ? groupByHour(entries) : [];
+  const { workMs, notWorkMs, ratio } = hasEntries ? computeDurations(entries) : { workMs: 0, notWorkMs: 0, ratio: 0 };
+  const ratioTrend = !hasEntries ? "flat" : ratio >= 66 ? "up" : ratio >= 33 ? "flat" : "down";
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-10">
@@ -59,12 +61,22 @@ export default async function DashboardPage() {
         <p className="text-xs uppercase tracking-wide text-slate-500">Modul aktif</p>
         <h1 className="text-3xl font-semibold text-slate-900">{routes[0].name}</h1>
         <p className="text-sm text-slate-500">Deteksi aktivitas kerja manusia (kerja vs tidak kerja) dari backend.</p>
+        <p className="text-xs text-slate-500">Data diambil langsung dari backend Flask (app.py) via endpoint /api/productivity.</p>
+        {error ? (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {error}
+          </div>
+        ) : !hasEntries ? (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700" role="status">
+            Belum ada data produktivitas diterima dari backend.
+          </div>
+        ) : null}
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <StatsCard title="Rasio Kerja" value={`${ratio}%`} helper="24 jam terakhir" trend={ratio >= 66 ? "up" : ratio >= 33 ? "flat" : "down"} />
-        <StatsCard title="Durasi Kerja" value={fmtDuration(workMs)} helper="Estimasi berdasarkan log" />
-        <StatsCard title="Durasi Tidak Kerja" value={fmtDuration(notWorkMs)} helper="Estimasi berdasarkan log" />
+        <StatsCard title="Rasio Kerja" value={hasEntries ? `${ratio}%` : "-"} helper="24 jam terakhir" trend={ratioTrend} />
+        <StatsCard title="Durasi Kerja" value={hasEntries ? fmtDuration(workMs) : "-"} helper="Estimasi berdasarkan log" />
+        <StatsCard title="Durasi Tidak Kerja" value={hasEntries ? fmtDuration(notWorkMs) : "-"} helper="Estimasi berdasarkan log" />
       </section>
 
       <section className="rounded-2xl border border-slate-100 bg-white/70 p-4">
@@ -85,14 +97,20 @@ export default async function DashboardPage() {
           <p className="text-xs text-slate-500">Data disimpan dengan timestamp (kerja / tidak kerja)</p>
         </header>
         <ul className="mt-4 space-y-2">
-          {entries.slice(-10).reverse().map((e) => (
-            <li key={e.timestamp} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-2">
-              <span className="text-sm text-slate-800">{new Date(e.timestamp).toLocaleString("id-ID")}</span>
-              <span className={`text-xs font-medium ${e.label === "work" ? "text-green-600" : "text-red-600"}`}>
-                {e.label === "work" ? "kerja" : "tidak kerja"}
-              </span>
+          {recentEntries.length === 0 ? (
+            <li className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              Belum ada data produktivitas yang diterima dari backend.
             </li>
-          ))}
+          ) : (
+            recentEntries.map((e) => (
+              <li key={e.timestamp} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-2">
+                <span className="text-sm text-slate-800">{new Date(e.timestamp).toLocaleString("id-ID")}</span>
+                <span className={`text-xs font-medium ${e.label === "work" ? "text-green-600" : "text-red-600"}`}>
+                  {e.label === "work" ? "kerja" : "tidak kerja"}
+                </span>
+              </li>
+            ))
+          )}
         </ul>
       </section>
     </main>

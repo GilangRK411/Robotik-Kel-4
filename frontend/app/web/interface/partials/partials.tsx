@@ -1,54 +1,43 @@
-import type { DashboardData, WorkSeriesResponse, WorkEntry } from "@/lib/types/web";
+import type { WorkSeriesResponse, WorkEntry, WorkStatus } from "@/lib/types/web";
 
-const dummyData: DashboardData = {
-  summaries: [
-    { id: "rbx-01", name: "Atlas", status: "active", batteryLevel: 82 },
-    { id: "rbx-12", name: "Zephyr", status: "idle", batteryLevel: 56 },
-    { id: "rbx-07", name: "Nimbus", status: "maintenance", batteryLevel: 34 },
-  ],
-  logs: [
-    {
-      id: "log-1",
-      robotId: "rbx-01",
-      message: "Atlas memasuki zona inspeksi.",
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: "log-2",
-      robotId: "rbx-12",
-      message: "Zephyr standby menunggu perintah.",
-      timestamp: new Date().toISOString(),
-    },
-  ],
-};
+type RawWorkEntry = Partial<WorkEntry> & { status?: WorkStatus };
 
-export async function fetchDashboardData(): Promise<DashboardData> {
-  // simulasi fetch ke backend; sengaja diberi jeda untuk feel async
-  await new Promise((resolve) => setTimeout(resolve, 150));
-  return dummyData;
+const FALLBACK_BASE_URL = "http://localhost:5000";
+
+function normalizeWorkEntries(entries: RawWorkEntry[]): WorkEntry[] {
+  return entries
+    .map((entry) => {
+      const label = entry.label ?? entry.status;
+      if (!entry.timestamp || !label) return null;
+      return {
+        timestamp: entry.timestamp,
+        label,
+        probability: typeof entry.probability === "number" ? entry.probability : 0,
+      };
+    })
+    .filter((entry): entry is WorkEntry => Boolean(entry));
 }
 
-export async function fetchWorkPerformance(): Promise<WorkEntry[]> {
-  // If NEXT_PUBLIC_BACKEND_URL is defined, use it; else call local API route
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "");
-  const url = base ? `${base}/api/productivity` : "/api/productivity";
-  // console.log("url: ", url);
+export type FetchWorkPerformanceResult = {
+  entries: WorkEntry[];
+  error?: string;
+};
+
+export async function fetchWorkPerformance(limit = 200): Promise<FetchWorkPerformanceResult> {
+  // Default ke backend Flask (app.py); masih bisa di-override lewat NEXT_PUBLIC_BACKEND_URL.
+  const base = (process.env.NEXT_PUBLIC_BACKEND_URL || FALLBACK_BASE_URL).replace(/\/$/, "");
+  const search = limit ? `?limit=${limit}` : "";
+  const url = `${base}/api/productivity${search}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
-    // console.log(`response from ${url}:`, res.body);
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-    const json = (await res.json()) as WorkSeriesResponse;
-    // console.log("Fetched work performance data:", json);
-    return json.entries;
+    const json = (await res.json()) as WorkSeriesResponse | { entries?: RawWorkEntry[] };
+    const normalized = normalizeWorkEntries(json.entries ?? []);
+    return { entries: normalized };
   } catch (err) {
-    // console.error("Error fetching work performance data:", err);
-    const now = new Date();
-    const entries: WorkEntry[] = [];
-    for (let i = 60; i >= 0; i--) {
-      const ts = new Date(now.getTime() - i * 10 * 60 * 1000);
-      const status = i % 3 === 0 ? "not_work" : "work";
-      entries.push({ timestamp: ts.toISOString(), status });
-    }
-    return entries;
+    return {
+      entries: [],
+      error: "Gagal mengambil data dari backend. Pastikan service Flask berjalan atau set NEXT_PUBLIC_BACKEND_URL.",
+    };
   }
 }
